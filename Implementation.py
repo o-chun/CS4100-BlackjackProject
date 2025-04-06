@@ -43,6 +43,7 @@ class main():
 
     while continuePlaying:
         hit = True
+        print("Your bankroll is $", bankroll)
         bet = input("Enter your bet (minimum bet is $1): ")
         currentBet = int(bet)
         if currentBet > bankroll:
@@ -68,26 +69,25 @@ class main():
             print(f"The dealer has {dealerHand}")
 
         while hit:
-            playerChoice = input("Do you want to hit or stay?")
-            if playerChoice == "hit" or playerChoice == "Hit":
+            playerChoice = input("Do you want to hit or stay? ")
+            if playerChoice.lower() == "hit":
                 hit = True
-                deal = deal()
-                print(f"Your card is {deal[0]}")
-                playerHand += deal[1]
+                playerCard = deal()
+                print(f"Your card is {playerCard[0]}")
+                playerHand += playerCard[1]
                 print(f"You have {playerHand}")
                 if playerHand > 21:
                     print("You busted!")
                     print(f"Your bankroll is now {bankroll}")
-                    nextRound = input("Do you want to play again?")
-                    if nextRound == "yes" or nextRound == "Yes":
-                        continuePlaying = True
-                    else:
-                        continuePlaying = False
+                    hit = False
+                if playerHand == 21:
+                    print("You have 21, you cannot hit anymore!")
+                    hit = False
             else:
                 hit = False
                 print(f"You have chosen to stay with {playerHand}")
 
-        while dealerHand < 17:
+        while dealerHand < 17 and playerHand <= 21:
             dealerCard = deal()
             print(f"Dealer's card is {dealerCard[0]}")
             dealerHand += dealerCard[1]
@@ -96,38 +96,26 @@ class main():
                 print("Dealer busted, you win!")
                 bankroll += currentBet * 2
                 print(f"Your bankroll is now {bankroll}")
-                nextRound = input("Do you want to play again?")
-                if nextRound == "yes" or nextRound == "Yes":
-                    continuePlaying = True
-                else:
-                    continuePlaying = False
 
-        if playerHand > dealerHand:
-            print("You win!")
-            bankroll += currentBet * 2
-            print(f"Your bankroll is now {bankroll}")
-            nextRound = input("Do you want to play again?")
-            if nextRound == "yes" or nextRound == "Yes":
-                continuePlaying = True
+        if playerHand <= 21:
+            if playerHand > dealerHand:
+                print("You win!")
+                bankroll += currentBet * 2
+                print(f"Your bankroll is now {bankroll}")
+            elif playerHand == dealerHand:
+                print("It's a tie!")
+                bankroll += currentBet
+                print(f"Your bankroll is now {bankroll}")
             else:
-                continuePlaying = False
-        elif playerHand == dealerHand:
-            print("It's a tie!")
-            bankroll += currentBet
-            print(f"Your bankroll is now {bankroll}")
-            nextRound = input("Do you want to play again?")
-            if nextRound == "yes" or nextRound == "Yes":
-                continuePlaying = True
-            else:
-                continuePlaying = False
+                print("Dealer wins!")
+                print(f"Your bankroll is now {bankroll}")
+
+        nextRound = input("Do you want to play again? ")
+        if nextRound.lower() == "yes":
+            continuePlaying = True
         else:
-            print("Dealer wins!")
-            print(f"Your bankroll is now {bankroll}")
-            nextRound = input("Do you want to play again?")
-            if nextRound == "yes" or nextRound == "Yes":
-                continuePlaying = True
-            else:
-                continuePlaying = False
+            continuePlaying = False
+            break
 
 main()
 
