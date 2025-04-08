@@ -106,7 +106,7 @@ class main():
                 print("It's a tie!")
                 bankroll += currentBet
                 print(f"Your bankroll is now {bankroll}")
-            else:
+            elif playerHand < dealerHand:
                 print("Dealer wins!")
                 print(f"Your bankroll is now {bankroll}")
 
