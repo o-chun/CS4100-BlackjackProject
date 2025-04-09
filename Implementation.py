@@ -1,3 +1,5 @@
+import Player
+
 class init():
     global bankroll 
     bankroll = 1000
@@ -39,19 +41,28 @@ class main():
         card = deck.pop(rand)
         return card
     
+    # Set Player Type
+    playerSetup = True
+    while playerSetup:
+        playerType = input("Enter a player type (user/simple): ") # User Input: Player Type
+        player = None
+        if playerType.lower() == "user":
+            player = Player.User(input("Enter your name: "), bankroll) # User Input: Player Name
+            playerSetup = False
+        elif playerType.lower() == "simple":
+            player = Player.SimpleBot(bankroll)
+            playerSetup = False
+        else:
+            print("Invalid player type. Please enter 'user' or 'simple'.")
+            continue
+
     continuePlaying = True
 
     while continuePlaying:
         hit = True
+        print("Round #", player.rounds)
         print("Your bankroll is $", bankroll)
-        bet = input("Enter your bet (minimum bet is $1): ")
-        currentBet = int(bet)
-        if currentBet > bankroll:
-            print("You can't bet more than you have!")
-            currentBet = input(f"Enter your bet under {bankroll}: ")
-        elif currentBet < 1:
-            print("You can't bet less than $1!")
-            currentBet = input("Enter your bet (minimum bet is $1): ")
+        currentBet = player.betResponse() # Player Input: Bet
         if currentBet < bankroll and currentBet >= 1:
             bankroll -= currentBet
             playerHand = 0
@@ -69,8 +80,7 @@ class main():
             print(f"The dealer has {dealerHand}")
 
         while hit:
-            playerChoice = input("Do you want to hit or stay? ")
-            if playerChoice.lower() == "hit":
+            if player.hitResponse(): # Player Input: Hit or Stay
                 hit = True
                 playerCard = deal()
                 print(f"Your card is {playerCard[0]}")
@@ -106,16 +116,14 @@ class main():
                 print("It's a tie!")
                 bankroll += currentBet
                 print(f"Your bankroll is now {bankroll}")
-            elif playerHand < dealerHand:
+            elif playerHand < dealerHand: # Bug to fix: If dealer busts, this message still prints
                 print("Dealer wins!")
                 print(f"Your bankroll is now {bankroll}")
+        
+        continuePlaying = player.playAgainResponse() # Player Input: Play Again
 
-        nextRound = input("Do you want to play again? ")
-        if nextRound.lower() == "yes":
-            continuePlaying = True
-        else:
-            continuePlaying = False
-            break
+        # Update Player Bankroll for bot logic
+        player.setBankroll(bankroll)
 
 main()
 
