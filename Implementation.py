@@ -29,6 +29,9 @@ init()
 
 class main():
     global bankroll
+    numWins = 0
+    numLosses = 0
+    numTies = 0
 
     def deal():
         import random
@@ -63,7 +66,7 @@ class main():
         print("Round #", player.rounds)
         print("Your bankroll is $", bankroll)
         currentBet = player.betResponse() # Player Input: Bet
-        if currentBet < bankroll and currentBet >= 1:
+        if currentBet <= bankroll and currentBet >= 1:
             bankroll -= currentBet
             playerHand = 0
             dealerHand = 0
@@ -87,6 +90,7 @@ class main():
                 playerHand += playerCard[1]
                 print(f"You have {playerHand}")
                 if playerHand > 21:
+                    numLosses += 1
                     print("You busted!")
                     print(f"Your bankroll is now {bankroll}")
                     hit = False
@@ -103,27 +107,34 @@ class main():
             dealerHand += dealerCard[1]
             print(f"Dealer has {dealerHand}")
             if dealerHand > 21:
+                numWins += 1
                 print("Dealer busted, you win!")
                 bankroll += currentBet * 2
                 print(f"Your bankroll is now {bankroll}")
 
         if playerHand <= 21:
             if playerHand > dealerHand:
+                numWins += 1
                 print("You win!")
                 bankroll += currentBet * 2
                 print(f"Your bankroll is now {bankroll}")
             elif playerHand == dealerHand:
+                numTies += 1
                 print("It's a tie!")
                 bankroll += currentBet
                 print(f"Your bankroll is now {bankroll}")
-            elif playerHand < dealerHand: # Bug to fix: If dealer busts, this message still prints
+            elif playerHand < dealerHand and dealerHand <= 21: 
+                numLosses += 1
                 print("Dealer wins!")
                 print(f"Your bankroll is now {bankroll}")
-        
-        continuePlaying = player.playAgainResponse() # Player Input: Play Again
 
         # Update Player Bankroll for bot logic
         player.setBankroll(bankroll)
+        player.setNumWins(numWins)
+        player.setNumLosses(numLosses)
+        player.setNumTies(numTies)
+        
+        continuePlaying = player.playAgainResponse() # Player Input: Play Again
 
 main()
 

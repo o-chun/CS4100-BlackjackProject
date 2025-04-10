@@ -1,12 +1,14 @@
 import random
 
-
 class Player():
-    def __init__(self, name: str = "JackBlack", bankroll: int = 1000):
+    def __init__(self, name: str = "JackBlack", bankroll: int = 1000, numWins: int = 0, numLosses: int = 0, numTies: int = 0):
         self.name = name
         self.bankroll = bankroll
         self.score = 0
         self.rounds = 1
+        self.numWins = numWins
+        self.numLosses = numLosses
+        self.numTies = numTies
 
     def __str__(self):
         return f"Player {self.name} has score {self.score}"
@@ -17,6 +19,15 @@ class Player():
     def setBankroll(self, bankroll: int):
         self.bankroll = bankroll
     
+    def setNumWins(self, numWins: int):
+        self.numWins = numWins
+
+    def setNumLosses(self, numLosses: int):
+        self.numLosses = numLosses
+
+    def setNumTies(self, numTies: int):
+        self.numTies = numTies
+
     def betResponse(self) -> int:
         pass
     
@@ -27,8 +38,8 @@ class Player():
         pass
 
 class User(Player):
-    def __init__(self, name: str = "JackBlack", bankroll: int = 1000):
-        super().__init__(name, bankroll)
+    def __init__(self, name: str = "JackBlack", bankroll: int = 1000, numWins: int = 0, numLosses: int = 0, numTies: int = 0):
+        super().__init__(name, bankroll, numWins, numLosses, numTies)
 
     def betResponse(self) -> int:
         while True:
@@ -75,8 +86,10 @@ class SimpleBot(Player):
         return random.choice([True, False])
         
     def playAgainResponse(self) -> bool:
-        if self.rounds < 10 and self.bankroll > 0:
+        if self.rounds < 5000 and self.bankroll > 0:
             self.rounds += 1
             return True
         else:
-            return False
+            print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - 1000) + ".")
+            print("SimpleBot won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
+            return False 
