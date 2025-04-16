@@ -83,6 +83,7 @@ class main():
             deal2 = deal()
             print(f"Your second card is {deal2[0]}")   
             playerHand += deal2[1]
+            player.setPlayerHand(playerHand)
             print(f"You have {playerHand}")
             deal3 = deal()
             print(f"Dealer's first card is {deal3[0]}")
@@ -95,6 +96,7 @@ class main():
                 playerCard = deal()
                 print(f"Your card is {playerCard[0]}")
                 playerHand += playerCard[1]
+                player.setPlayerHand(playerHand)
                 print(f"You have {playerHand}")
                 if playerHand > 21:
                     numLosses += 1

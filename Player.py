@@ -150,7 +150,7 @@ class GreedyBot(Player):
             return False
             
     def playAgainResponse(self) -> bool:
-        if self.rounds < 5000 and self.bankroll > 0:
+        if self.rounds < 1000 and self.bankroll > 0:
             self.rounds += 1
             return True
         else:
