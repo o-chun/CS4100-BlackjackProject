@@ -47,7 +47,7 @@ class main():
     # Set Player Type
     playerSetup = True
     while playerSetup:
-        playerType = input("Enter a player type (user/simple): ") # User Input: Player Type
+        playerType = input("Enter a player type (user/simple/rewards/greedy): ") # User Input: Player Type
         player = None
         if playerType.lower() == "user":
             player = Player.User(input("Enter your name: "), bankroll) # User Input: Player Name
@@ -55,8 +55,15 @@ class main():
         elif playerType.lower() == "simple":
             player = Player.SimpleBot(bankroll)
             playerSetup = False
+        elif playerType.lower() == "rewards":
+            bankroll = 10000000
+            player = Player.RewardsBot(bankroll)
+            playerSetup = False
+        elif playerType.lower() == "greedy":
+            player = Player.GreedyBot(bankroll)
+            playerSetup = False
         else:
-            print("Invalid player type. Please enter 'user' or 'simple'.")
+            print("Invalid player type. Please enter 'user', 'simple', 'rewards', or 'greedy'.")
             continue
 
     continuePlaying = True
@@ -129,6 +136,7 @@ class main():
                 print(f"Your bankroll is now {bankroll}")
 
         # Update Player Bankroll for bot logic
+        player.setPlayerHand(playerHand)
         player.setBankroll(bankroll)
         player.setNumWins(numWins)
         player.setNumLosses(numLosses)
