@@ -69,6 +69,10 @@ class main():
     continuePlaying = True
 
     while continuePlaying:
+        if bankroll == 0:
+            print("You are out of money!")
+            continuePlaying = False
+            break
         hit = True
         print("Round #", player.rounds)
         print("Your bankroll is $", bankroll)
