@@ -1,4 +1,6 @@
 import random
+import json
+import os
 
 class Player():
     def __init__(self, name: str = "JackBlack", bankroll: int = 1000, numWins: int = 0, numLosses: int = 0, numTies: int = 0, playerHand: int = 0):
@@ -102,6 +104,8 @@ class RewardsBot(Player):
     def __init__(self, name: str = "BotRewards"):
         super().__init__(name)
         self.previousBankroll = 10000000
+        self.dataFile = "reward_data.json"
+        self.loadData()
 
     def betResponse(self) -> int:
         return 1
@@ -126,6 +130,7 @@ class RewardsBot(Player):
         for i in self.rewardSamples:
             if i[2] < 1000:
                 self.rounds += 1
+                self.saveData()
                 return True      
             
         for index, j in enumerate(self.rewardEstimates):
@@ -133,8 +138,26 @@ class RewardsBot(Player):
             
         print(self.rewardSamples)
         print(self.rewardEstimates)
-            
+        self.saveData()
         return False  
+    
+    def saveData(self):
+        data = {
+            "rewardSamples": self.rewardSamples,
+            "rewardEstimates": self.rewardEstimates
+        }
+        with open(self.dataFile, "w") as f:
+            json.dump(data, f)
+
+    def loadData(self):
+        if os.path.exists(self.dataFile):
+            with open(self.dataFile, "r") as f:
+                data = json.load(f)
+                self.rewardSamples = data.get("rewardSamples", self.rewardSamples)
+                self.rewardEstimates = data.get("rewardEstimates", self.rewardEstimates)
+        else:
+            self.rewardSamples = [[i, 0, 0] for i in range(2, 21)]
+            self.rewardEstimates = [[i, 0] for i in range(2, 21)]
 
 class GreedyBot(Player):
     def __init__(self, name: str = "BotGreedy"):
@@ -155,7 +178,7 @@ class GreedyBot(Player):
             return True
         else:
             print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - 1000) + ".")
-            print("SimpleBot won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
+            print("GreedyBot won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
             return False 
             
         

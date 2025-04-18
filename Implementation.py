@@ -46,9 +46,9 @@ class main():
     
     # Set Player Type
     playerSetup = True
+    player = None
     while playerSetup:
         playerType = input("Enter a player type (user/simple/rewards/greedy): ") # User Input: Player Type
-        player = None
         if playerType.lower() == "user":
             player = Player.User(input("Enter your name: "), bankroll) # User Input: Player Name
             playerSetup = False
@@ -82,17 +82,22 @@ class main():
             playerHand = 0
             dealerHand = 0
             deal1 = deal()
-            print(f"Your first card is {deal1[0]}")
+            if (type(player) != Player.RewardsBot):
+                print(f"Your first card is {deal1[0]}")
             playerHand += deal1[1]
             deal2 = deal()
-            print(f"Your second card is {deal2[0]}")   
+            if (type(player) != Player.RewardsBot):
+                print(f"Your second card is {deal2[0]}")   
             playerHand += deal2[1]
             player.setPlayerHand(playerHand)
-            print(f"You have {playerHand}")
+            if (type(player) != Player.RewardsBot):
+                print(f"You have {playerHand}")
             deal3 = deal()
-            print(f"Dealer's first card is {deal3[0]}")
+            if (type(player) != Player.RewardsBot):
+                print(f"Dealer's first card is {deal3[0]}")
             dealerHand += deal3[1]
-            print(f"The dealer has {dealerHand}")
+            if (type(player) != Player.RewardsBot):
+                print(f"The dealer has {dealerHand}")
 
         while hit:
             if player.hitResponse(): # Player Input: Hit or Stay
