@@ -48,7 +48,7 @@ class main():
     playerSetup = True
     player = None
     while playerSetup:
-        playerType = input("Enter a player type (user/simple/rewards/greedy): ") # User Input: Player Type
+        playerType = input("Enter a player type (user/simple/rewards/greedy/value): ") # User Input: Player Type
         if playerType.lower() == "user":
             player = Player.User(input("Enter your name: "), bankroll) # User Input: Player Name
             playerSetup = False
@@ -62,8 +62,11 @@ class main():
         elif playerType.lower() == "greedy":
             player = Player.GreedyBot(bankroll)
             playerSetup = False
+        elif playerType.lower() == "value":
+            player = Player.ValueBot(bankroll)
+            playerSetup = False
         else:
-            print("Invalid player type. Please enter 'user', 'simple', 'rewards', or 'greedy'.")
+            print("Invalid player type. Please enter 'user', 'simple', 'rewards', 'greedy' or 'value'.")
             continue
 
     continuePlaying = True

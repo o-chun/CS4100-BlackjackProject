@@ -98,13 +98,13 @@ class SimpleBot(Player):
         else:
             print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - 1000) + ".")
             print("SimpleBot won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
-            return False 
+            return False
         
 class RewardsBot(Player):
     def __init__(self, name: str = "BotRewards"):
         super().__init__(name)
         self.previousBankroll = 10000000
-        self.dataFile = "reward_data.json"
+        self.dataFile = "rewardData.json"
         self.loadData()
 
     def betResponse(self) -> int:
@@ -182,3 +182,32 @@ class GreedyBot(Player):
             return False 
             
         
+class ValueBot(Player):
+    def __init__(self, name: str = "BotData"):
+        super().__init__(name)
+        self.rewardEstimates = self.loadEstimates()
+
+    def betResponse(self) -> int:
+        return 1
+
+    def hitResponse(self) -> bool:
+        handTotal = self.playerHand
+        estimate = next((r[1] for r in self.rewardEstimates if r[0] == handTotal), 0)
+        return estimate < 0  # hit if expected value is negative
+
+    def playAgainResponse(self) -> bool:
+        if self.rounds < 1000 and self.bankroll > 0:
+            self.rounds += 1
+            return True
+        else:
+            print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - 1000) + ".")
+            print("ValueBot won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
+            return False
+
+    def loadEstimates(self):
+        try:
+            with open("rewardData.json", "r") as f:
+                data = json.load(f)
+                return data.get("rewardEstimates", [[i, 0] for i in range(2, 21)])
+        except FileNotFoundError:
+            return [[i, 0] for i in range(2, 21)]
