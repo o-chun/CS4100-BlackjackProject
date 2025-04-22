@@ -3,7 +3,7 @@ import json
 import os
 
 class Player():
-    def __init__(self, name: str = "JackBlack", bankroll: int = 1000, numWins: int = 0, numLosses: int = 0, numTies: int = 0, playerHand: int = 0):
+    def __init__(self, name: str = "JackBlack", bankroll: int = 1000, numWins: int = 0, numLosses: int = 0, numTies: int = 0, playerHand: int = 0, dealerHand: int = 0):
         self.name = name
         self.bankroll = bankroll
         self.startingBankroll = bankroll
@@ -13,6 +13,7 @@ class Player():
         self.numLosses = numLosses
         self.numTies = numTies
         self.playerHand = playerHand
+        self.dealerHand = dealerHand
 
     def __str__(self):
         return f"Player {self.name} has score {self.score}"
@@ -34,6 +35,9 @@ class Player():
 
     def setPlayerHand(self, playerHand: int):
         self.playerHand = playerHand
+
+    def setDealerHand(self, dealerHand: int):
+        self.dealerHand = dealerHand
 
     def betResponse(self) -> int:
         pass
@@ -93,7 +97,7 @@ class SimpleBot(Player):
         return random.choice([True, False])
         
     def playAgainResponse(self) -> bool:
-        if self.rounds < 5000 and self.bankroll > 0:
+        if self.rounds < 1000 and self.bankroll > 0:
             self.rounds += 1
             return True
         else:
@@ -238,9 +242,9 @@ class ValueBot(Player):
                         card = 10
                     next_s = s + card
                     if next_s > 21:
-                        hitVal += -1.0 * 0.1  # bust
+                        hitVal += -1.0 * 1/13  # bust
                     else:
-                        hitVal += self.V.get(next_s, 0.0) * 0.1  # expected value
+                        hitVal += self.V.get(next_s, 0.0) * 1/13  # expected value
                 hitVal = self.gamma * hitVal
 
                 newV[s] = max(standVal, hitVal)
@@ -260,10 +264,170 @@ class ValueBot(Player):
                     card = 10
                 next_s = s + card
                 if next_s > 21:
-                    hitVal += -1.0 * 0.1
+                    hitVal += -1.0 * 1/13
                 else:
-                    hitVal += self.V.get(next_s, 0.0) * 0.1
+                    hitVal += self.V.get(next_s, 0.0) * 1/13
             hitVal = self.gamma * hitVal
 
             self.policy[s] = hitVal > standVal
 
+class DealerRewardsBot(Player):
+    def __init__(self, name: str = "BotDealerRewards", bankroll: int = 1000000000000):
+        super().__init__(name, bankroll)
+        self.previousBankroll = 1000000000000
+        self.dataFile = "dealerRewardData.json"
+        self.loadData()
+
+    def betResponse(self) -> int:
+        return 1
+    
+    def hitResponse(self) -> bool:
+        return False
+    
+    dealerRewardSamples = []
+    for i in range (2, 21):
+        for j in range (2):
+            dealerRewardSamples.append([i, j, 0, 0])
+
+    dealerRewardEstimates = []
+    for i in range (2, 21):
+        for j in range (2):
+            dealerRewardEstimates.append([i, j, 0])
+    
+    def playAgainResponse(self) -> bool:
+        if self.dealerHand < 7:
+            dealer = 0 # Dealer is showing an Ace, 2, 3, 4, 5, or 6
+        else:
+            dealer = 1 # Dealer is showing a 7, 8, 9, or 10
+
+        for i in self.dealerRewardSamples:
+            if i[0] == self.playerHand and i[1] == dealer and i[3] < 1000:
+                if self.bankroll > self.previousBankroll:
+                    i[2] += 1
+                elif self.bankroll < self.previousBankroll:
+                    i[2] -= 1
+                i[3] += 1
+
+        self.previousBankroll = self.bankroll
+
+        for i in self.dealerRewardSamples:
+            if i[3] < 1000:
+                self.rounds += 1
+                self.saveData()
+                return True      
+            
+        for index, i in enumerate(self.dealerRewardEstimates):
+            i[2] = self.dealerRewardSamples[index][2] / self.dealerRewardSamples[index][3]
+            
+        print(self.dealerRewardSamples)
+        print(self.dealerRewardEstimates)
+        self.saveData()
+        return False  
+    
+    def saveData(self):
+        data = {
+            "dealerRewardSamples": self.dealerRewardSamples,
+            "dealerRewardEstimates": self.dealerRewardEstimates
+        }
+        with open(self.dataFile, "w") as f:
+            json.dump(data, f)
+
+    def loadData(self):
+        if os.path.exists(self.dataFile):
+            with open(self.dataFile, "r") as f:
+                data = json.load(f)
+                self.dealerRewardSamples = data.get("dealerRewardSamples", self.dealerRewardSamples)
+                self.dealerRewardEstimates = data.get("dealerRewardEstimates", self.dealerRewardEstimates)
+        else:
+            self.dealerRewardSamples = [[i, j, 0, 0] for i in range(2, 21) for j in range(2)]
+            self.dealerRewardEstimates = [[i, j, 0] for i in range(2, 21) for j in range(2)]
+
+class DealerValueBot(Player):
+    def __init__(self, name: str = "BotDealerValue", bankroll: int = 1000, rewardFile="dealerRewardData.json"):
+        super().__init__(name, bankroll)
+        self.gamma = 0.75 # Find good balance 
+        self.epsilon = 0.001
+        self.policy = {}
+        self.V = {}
+        self.R = {}
+        self.loadEstimates(rewardFile)
+        self.runValueIteration()
+
+    def betResponse(self) -> int:
+        return 1
+
+    def hitResponse(self) -> bool:
+        handTotal = self.playerHand
+        if self.dealerHand < 7:
+            dealerCard = 0
+        else:
+            dealerCard = 1
+
+        return self.policy.get((handTotal, dealerCard))
+
+    def playAgainResponse(self) -> bool:
+        if self.rounds < 1000 and self.bankroll > 0:
+            self.rounds += 1
+            return True
+        else:
+            print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - self.startingBankroll) + ".")
+            print("ValueBot won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
+            return False
+
+    def loadEstimates(self, rewardFile):
+        try:
+            with open(rewardFile, "r") as f:
+                reward_data = json.load(f)
+                rewardEstimates = reward_data.get("dealerRewardEstimates")
+                self.R = {(int(item[0]), int(item[1])): float(item[2]) for item in rewardEstimates if 2 <= item[0] <= 20}
+        except FileNotFoundError:
+            print("Reward file not found. Make sure RewardsBot has saved it first.")
+            self.R = {(p, d): 0.0 for p in range(2, 21) for d in range(2)}
+        
+    def runValueIteration(self):
+        self.V = {(p,d): 0.0 for p in range(2, 21) for d in range(2)}
+        maxIterations = 10000
+
+        for i in range(maxIterations):
+            delta = 0
+            newV = self.V.copy()
+            for p in range(2, 21):
+                for d in range(2):
+                    standVal = self.R[(p,d)]
+
+                    hitVal = 0
+                    for card in range(1, 14):  # Cards 1 to 13
+                        if card > 10: # face cards
+                            card = 10
+                        next_p = p + card
+                        if next_p > 21:
+                            hitVal += -1.0 * 1/13  # bust
+                        else:
+                            hitVal += self.V.get((next_p, d), 0.0) * 1/13  # expected value
+                    hitVal = self.gamma * hitVal
+
+                    newV[(p,d)] = max(standVal, hitVal)
+                    delta = max(delta, abs(newV[(p,d)] - self.V[(p,d)]))
+            self.V = newV
+
+            if delta < self.epsilon:
+                break
+
+        # Form policy
+        for p in range(2, 21):
+            for d in range(2):
+                standVal = self.R[(p,d)]
+
+                hitVal = 0
+                for card in range(1, 14):
+                    if card > 10:
+                        card = 10
+                    next_p = p + card
+                    if next_p > 21:
+                        hitVal += -1.0 * 1/13
+                    else:
+                        hitVal += self.V.get((next_p, d), 0.0) * 1/13
+                hitVal = self.gamma * hitVal
+                self.policy[(p,d)] = hitVal > standVal
+
+        print(self.policy)

@@ -48,7 +48,7 @@ class main():
     playerSetup = True
     player = None
     while playerSetup:
-        playerType = input("Enter a player type (user/simple/rewards/greedy/value): ") # User Input: Player Type
+        playerType = input("Enter a player type (user/simple/rewards/greedy/value/rewards2/value2): ") # User Input: Player Type
         if playerType.lower() == "user":
             player = Player.User(input("Enter your name: "), bankroll) # User Input: Player Name
             playerSetup = False
@@ -65,8 +65,15 @@ class main():
         elif playerType.lower() == "value":
             player = Player.ValueBot(bankroll)
             playerSetup = False
+        elif playerType.lower() == "rewards2":
+            bankroll = 1000000000000
+            player = Player.DealerRewardsBot(bankroll)
+            playerSetup = False
+        elif playerType.lower() == "value2":
+            player = Player.DealerValueBot(bankroll)
+            playerSetup = False
         else:
-            print("Invalid player type. Please enter 'user', 'simple', 'rewards', 'greedy' or 'value'.")
+            print("Invalid player type. Please enter 'user', 'simple', 'rewards', 'greedy', 'value', 'rewards2', or 'value2'.")
             continue
 
     continuePlaying = True
@@ -99,6 +106,7 @@ class main():
             if (type(player) != Player.RewardsBot):
                 print(f"Dealer's first card is {deal3[0]}")
             dealerHand += deal3[1]
+            player.setDealerHand(dealerHand)
             if (type(player) != Player.RewardsBot):
                 print(f"The dealer has {dealerHand}")
 
