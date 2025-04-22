@@ -371,7 +371,7 @@ class DealerValueBot(Player):
             return True
         else:
             print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - self.startingBankroll) + ".")
-            print("ValueBot won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
+            print("ValueBot2 won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
             return False
 
     def loadEstimates(self, rewardFile):
