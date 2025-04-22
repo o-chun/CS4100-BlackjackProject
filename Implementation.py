@@ -115,7 +115,7 @@ class main():
                     print("You busted!")
                     print(f"Your bankroll is now {bankroll}")
                     hit = False
-                if playerHand == 21:
+                elif playerHand == 21:
                     print("You have 21, you cannot hit anymore!")
                     hit = False
             else:

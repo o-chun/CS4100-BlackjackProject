@@ -6,6 +6,7 @@ class Player():
     def __init__(self, name: str = "JackBlack", bankroll: int = 1000, numWins: int = 0, numLosses: int = 0, numTies: int = 0, playerHand: int = 0):
         self.name = name
         self.bankroll = bankroll
+        self.startingBankroll = bankroll
         self.score = 0
         self.rounds = 1
         self.numWins = numWins
@@ -82,8 +83,8 @@ class User(Player):
                 print("Invalid response. Please enter 'yes' or 'no'.")
     
 class SimpleBot(Player):
-    def __init__(self, name: str = "SimpleBot"):
-        super().__init__(name)
+    def __init__(self, name: str = "SimpleBot", bankroll: int = 1000):
+        super().__init__(name, bankroll)
 
     def betResponse(self) -> int:
         return 1
@@ -96,13 +97,13 @@ class SimpleBot(Player):
             self.rounds += 1
             return True
         else:
-            print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - 1000) + ".")
+            print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - self.startingBankroll) + ".")
             print("SimpleBot won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
             return False
         
 class RewardsBot(Player):
-    def __init__(self, name: str = "BotRewards"):
-        super().__init__(name)
+    def __init__(self, name: str = "BotRewards", bankroll: int = 10000000):
+        super().__init__(name, bankroll)
         self.previousBankroll = 10000000
         self.dataFile = "rewardData.json"
         self.loadData()
@@ -160,8 +161,8 @@ class RewardsBot(Player):
             self.rewardEstimates = [[i, 0] for i in range(2, 21)]
 
 class GreedyBot(Player):
-    def __init__(self, name: str = "BotGreedy"):
-        super().__init__(name)
+    def __init__(self, name: str = "BotGreedy", bankroll: int = 1000):
+        super().__init__(name, bankroll)
 
     def betResponse(self) -> int:
         return 1
@@ -177,37 +178,90 @@ class GreedyBot(Player):
             self.rounds += 1
             return True
         else:
-            print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - 1000) + ".")
+            print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - self.startingBankroll) + ".")
             print("GreedyBot won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
             return False 
             
         
 class ValueBot(Player):
-    def __init__(self, name: str = "BotData"):
-        super().__init__(name)
-        self.rewardEstimates = self.loadEstimates()
+    def __init__(self, name: str = "BotData", bankroll: int = 1000, rewardFile="reward_data.json"):
+        super().__init__(name, bankroll)
+        self.gamma = 0.8 # Find good balance (doesn't seem to affect it too much right now)
+        self.epsilon = 0.001
+        self.policy = {}
+        self.V = {}
+        self.R = {}
+        self.loadEstimates(rewardFile)
+        self.runValueIteration()
 
     def betResponse(self) -> int:
         return 1
 
     def hitResponse(self) -> bool:
         handTotal = self.playerHand
-        estimate = next((r[1] for r in self.rewardEstimates if r[0] == handTotal), 0)
-        return estimate < 0  # hit if expected value is negative
+        #if self.rounds % 100 == 0: # Update policy every 100 rounds (don't think this affects it currently)
+        #    self.runValueIteration() # Could be useful when changing up betting depending on current bankroll or counting cards)
+        return self.policy.get(handTotal, False)
 
     def playAgainResponse(self) -> bool:
         if self.rounds < 1000 and self.bankroll > 0:
             self.rounds += 1
             return True
         else:
-            print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - 1000) + ".")
+            print("Ended with " + str(self.bankroll) + " after " + str(self.rounds) + " rounds for a total winnings of " + str(self.bankroll - self.startingBankroll) + ".")
             print("ValueBot won " + str(self.numWins) + " times, lost " + str(self.numLosses) + " times, and tied " + str(self.numTies) + " times.")
             return False
 
-    def loadEstimates(self):
+    def loadEstimates(self, rewardFile):
         try:
-            with open("rewardData.json", "r") as f:
-                data = json.load(f)
-                return data.get("rewardEstimates", [[i, 0] for i in range(2, 21)])
+            with open(rewardFile, "r") as f:
+                reward_data = json.load(f)
+                self.R = {int(item[0]): float(item[1]) for item in reward_data if 2 <= item[0] <= 20}
         except FileNotFoundError:
-            return [[i, 0] for i in range(2, 21)]
+            print("Reward file not found. Make sure RewardsBot has saved it first.")
+            self.R = {s: 0.0 for s in range(2, 21)}
+        
+    def runValueIteration(self):
+        self.V = {s: 0.0 for s in range(2, 21)}
+        maxIterations = 1000
+
+        for i in range(maxIterations):
+            delta = 0
+            newV = self.V.copy()
+            for s in range(2, 21):
+                standVal = self.R[s]
+
+                hitVal = 0
+                for card in range(1, 14):  # Cards 1 to 13
+                    if card > 10: # face cards
+                        card = 10
+                    next_s = s + card
+                    if next_s > 21:
+                        hitVal += -1.0 * 0.1  # bust
+                    else:
+                        hitVal += self.V.get(next_s, 0.0) * 0.1  # expected value
+                hitVal = self.gamma * hitVal
+
+                newV[s] = max(standVal, hitVal)
+                delta = max(delta, abs(newV[s] - self.V[s]))
+            self.V = newV
+
+            if delta < self.epsilon:
+                break
+
+        # Form policy
+        for s in range(2, 21):
+            standVal = self.R[s]
+
+            hitVal = 0
+            for card in range(1, 14):
+                if card > 10:
+                    card = 10
+                next_s = s + card
+                if next_s > 21:
+                    hitVal += -1.0 * 0.1
+                else:
+                    hitVal += self.V.get(next_s, 0.0) * 0.1
+            hitVal = self.gamma * hitVal
+
+            self.policy[s] = hitVal > standVal
