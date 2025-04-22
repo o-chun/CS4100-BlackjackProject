@@ -186,7 +186,7 @@ class GreedyBot(Player):
 class ValueBot(Player):
     def __init__(self, name: str = "BotData", bankroll: int = 1000, rewardFile="rewardData.json"):
         super().__init__(name, bankroll)
-        self.gamma = 0.8 # Find good balance 
+        self.gamma = 0.85 # Find good balance 
         self.epsilon = 0.001
         self.policy = {}
         self.V = {}
