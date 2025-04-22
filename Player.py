@@ -184,9 +184,9 @@ class GreedyBot(Player):
             
         
 class ValueBot(Player):
-    def __init__(self, name: str = "BotData", bankroll: int = 1000, rewardFile="reward_data.json"):
+    def __init__(self, name: str = "BotData", bankroll: int = 1000, rewardFile="rewardData.json"):
         super().__init__(name, bankroll)
-        self.gamma = 0.8 # Find good balance (doesn't seem to affect it too much right now)
+        self.gamma = 0.8 # Find good balance 
         self.epsilon = 0.001
         self.policy = {}
         self.V = {}
@@ -216,14 +216,15 @@ class ValueBot(Player):
         try:
             with open(rewardFile, "r") as f:
                 reward_data = json.load(f)
-                self.R = {int(item[0]): float(item[1]) for item in reward_data if 2 <= item[0] <= 20}
+                rewardEstimates = reward_data.get("rewardEstimates")
+                self.R = {int(item[0]): float(item[1]) for item in rewardEstimates if 2 <= item[0] <= 20}
         except FileNotFoundError:
             print("Reward file not found. Make sure RewardsBot has saved it first.")
             self.R = {s: 0.0 for s in range(2, 21)}
         
     def runValueIteration(self):
         self.V = {s: 0.0 for s in range(2, 21)}
-        maxIterations = 1000
+        maxIterations = 10000
 
         for i in range(maxIterations):
             delta = 0
@@ -265,3 +266,4 @@ class ValueBot(Player):
             hitVal = self.gamma * hitVal
 
             self.policy[s] = hitVal > standVal
+
