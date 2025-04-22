@@ -345,7 +345,7 @@ class DealerRewardsBot(Player):
 class DealerValueBot(Player):
     def __init__(self, name: str = "BotDealerValue", bankroll: int = 1000, rewardFile="dealerRewardData.json"):
         super().__init__(name, bankroll)
-        self.gamma = 0.75 # Find good balance 
+        self.gamma = 0.9 # Find good balance 
         self.epsilon = 0.001
         self.policy = {}
         self.V = {}
