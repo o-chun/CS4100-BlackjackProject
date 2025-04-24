@@ -14,6 +14,9 @@ class Player():
         self.numTies = numTies
         self.playerHand = playerHand
         self.dealerHand = dealerHand
+        self.isAceSimple = False
+        self.playerAces = 0
+        self.dealerAces = 0
 
     def __str__(self):
         return f"Player {self.name} has score {self.score}"
@@ -38,6 +41,27 @@ class Player():
 
     def setDealerHand(self, dealerHand: int):
         self.dealerHand = dealerHand
+
+    def setIsAceSimple(self, isAceSimple: bool):
+        self.isAceSimple = isAceSimple
+
+    def addPlayerAce(self):
+        self.playerAces += 1
+
+    def addDealerAce(self):
+        self.dealerAces += 1
+
+    def setPlayerAces(self, playerAces: int):
+        self.playerAces = playerAces
+        
+    def setDealerAces(self, dealerAces: int):
+        self.dealerAces = dealerAces
+
+    def getPlayerAces(self):
+        return self.playerAces
+    
+    def getDealerAces(self):
+        return self.dealerAces
 
     def betResponse(self) -> int:
         pass

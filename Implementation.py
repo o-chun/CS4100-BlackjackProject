@@ -1,5 +1,7 @@
 import Player
+from math import floor
 
+botMessages = False # To toggle bot messages
 class init():
     global bankroll 
     bankroll = 1000
@@ -47,7 +49,10 @@ class main():
     # Set Player Type
     playerSetup = True
     player = None
+    isAceSimple = True
     while playerSetup:
+        aceResponse = input("Do you want to play with simple Aces (always 1) or normal Aces (1 or 11)? (s/n): ")
+        isAceSimple = aceResponse.lower() == "simple" or aceResponse.lower() == "s"
         playerType = input("Enter a player type (user/simple/rewards/greedy/value/rewards2/value2): ") # User Input: Player Type
         if playerType.lower() == "user":
             player = Player.User(input("Enter your name: "), bankroll) # User Input: Player Name
@@ -76,6 +81,7 @@ class main():
             print("Invalid player type. Please enter 'user', 'simple', 'rewards', 'greedy', 'value', 'rewards2', or 'value2'.")
             continue
 
+    player.setIsAceSimple(isAceSimple)
     continuePlaying = True
 
     while continuePlaying:
@@ -83,7 +89,6 @@ class main():
             print("You are out of money!")
             continuePlaying = False
             break
-        hit = True
         print("Round #", player.rounds)
         print("Your bankroll is $", bankroll)
         currentBet = player.betResponse() # Player Input: Bet
@@ -91,71 +96,146 @@ class main():
             bankroll -= currentBet
             playerHand = 0
             dealerHand = 0
+            playerAceHand = 0
+            dealerAceHand = 0
+            dealerCardCount = 0
+            playerBlackjack = False
+            dealerBlackjack = False
             deal1 = deal()
-            if (type(player) != Player.RewardsBot):
+            hit = True
+            if (type(player) == Player.User or botMessages): # First player card
                 print(f"Your first card is {deal1[0]}")
+            if deal1[0] == "Ace" and not isAceSimple:
+                player.addPlayerAce()
             playerHand += deal1[1]
             deal2 = deal()
-            if (type(player) != Player.RewardsBot):
+            if (type(player) == Player.User or botMessages): # Second player card
                 print(f"Your second card is {deal2[0]}")   
+            if deal2[0] == "Ace" and not isAceSimple:
+                player.addPlayerAce()
             playerHand += deal2[1]
             player.setPlayerHand(playerHand)
-            if (type(player) != Player.RewardsBot):
-                print(f"You have {playerHand}")
+            if not isAceSimple:
+                if player.getPlayerAces() > 0:
+                    playerAceHand = playerHand + 10
+            if (type(player) == Player.User or botMessages):
+                if playerAceHand == 21:
+                    print("You have 21. Blackjack!")
+                    hit = False
+                    playerBlackjack = True
+                else:
+                    print(f"You have {playerHand}")
+                    if player.getPlayerAces() > 0 and not isAceSimple and playerAceHand < 21:
+                        print(f"or {playerAceHand} with an Ace as 11")
             deal3 = deal()
-            if (type(player) != Player.RewardsBot):
+            dealerCardCount += 1
+            if (type(player) == Player.User or botMessages): # First dealer card
                 print(f"Dealer's first card is {deal3[0]}")
+            if deal3[0] == "Ace" and not isAceSimple:
+                player.addDealerAce()
             dealerHand += deal3[1]
             player.setDealerHand(dealerHand)
-            if (type(player) != Player.RewardsBot):
+            if (type(player) == Player.User or botMessages):
                 print(f"The dealer has {dealerHand}")
 
         while hit:
             if player.hitResponse(): # Player Input: Hit or Stay
                 hit = True
                 playerCard = deal()
-                print(f"Your card is {playerCard[0]}")
+                if playerCard[0] == "Ace" and not isAceSimple:
+                    player.addPlayerAce()
+                if (type(player) == Player.User or botMessages):
+                    print(f"Your card is {playerCard[0]}")
                 playerHand += playerCard[1]
                 player.setPlayerHand(playerHand)
-                print(f"You have {playerHand}")
+                if (type(player) == Player.User or botMessages):
+                    print(f"You have {playerHand}")
+                if player.getPlayerAces() > 0:
+                    playerAceHand = playerHand + 10
+                    if playerAceHand < 21:
+                        if (type(player) == Player.User or botMessages):
+                            print(f"or {playerAceHand} with an Ace as 11")
                 if playerHand > 21:
                     numLosses += 1
-                    print("You busted!")
-                    print(f"Your bankroll is now {bankroll}")
+                    if (type(player) == Player.User or botMessages):
+                        print("You busted!")
+                        print(f"Your bankroll is now {bankroll}")
                     hit = False
-                elif playerHand == 21:
-                    print("You have 21, you cannot hit anymore!")
+                elif playerHand == 21 or playerAceHand == 21:
+                    if (type(player) == Player.User or botMessages):
+                        print("You have 21, you cannot hit anymore!")
                     hit = False
             else:
                 hit = False
-                print(f"You have chosen to stay with {playerHand}")
+                if (type(player) == Player.User or botMessages):
+                    print(f"You have chosen to stay with {playerHand}")
 
-        while dealerHand < 17 and playerHand <= 21:
+        while dealerHand < 17 and dealerAceHand < 17 and playerHand <= 21:
             dealerCard = deal()
-            print(f"Dealer's card is {dealerCard[0]}")
+            dealerCardCount += 1
+            if (type(player) == Player.User or botMessages):
+                print(f"Dealer's card is {dealerCard[0]}")
             dealerHand += dealerCard[1]
-            print(f"Dealer has {dealerHand}")
+            if dealerCard[0] == "Ace" and not isAceSimple:
+                player.addDealerAce()
+            if (type(player) == Player.User or botMessages):
+                print(f"Dealer has {dealerHand}")
+            if player.getDealerAces() > 0:
+                dealerAceHand = dealerHand + 10
+                if dealerAceHand == 21 and dealerCardCount == 2:
+                    dealerBlackjack = True
+                    if (type(player) == Player.User or botMessages):
+                        print(f"or {dealerAceHand} with an Ace as 11")
+                elif dealerAceHand <= 21:
+                    if (type(player) == Player.User or botMessages):
+                        print(f"or {dealerAceHand} with an Ace as 11")
+            else:
+                dealerAceHand = dealerHand
             if dealerHand > 21:
                 numWins += 1
-                print("Dealer busted, you win!")
-                bankroll += currentBet * 2
-                print(f"Your bankroll is now {bankroll}")
+                if (type(player) == Player.User or botMessages):
+                    print("Dealer busted, you win!")
+                if playerBlackjack:
+                    bankroll += floor(currentBet * 2.5)
+                else:
+                    bankroll += currentBet * 2
+                if (type(player) == Player.User or botMessages):
+                    print(f"Your bankroll is now {bankroll}")
 
         if playerHand <= 21:
+            if not isAceSimple:
+                if playerAceHand <= 21 and playerAceHand > playerHand:
+                    playerHand = playerAceHand
+                if dealerAceHand <= 21 and dealerAceHand > dealerHand:
+                    dealerHand = dealerAceHand
             if playerHand > dealerHand:
                 numWins += 1
-                print("You win!")
                 bankroll += currentBet * 2
-                print(f"Your bankroll is now {bankroll}")
-            elif playerHand == dealerHand:
-                numTies += 1
-                print("It's a tie!")
-                bankroll += currentBet
-                print(f"Your bankroll is now {bankroll}")
+                if (type(player) == Player.User or botMessages):
+                    print("You win!")
+                    print(f"Your bankroll is now {bankroll}")
             elif playerHand < dealerHand and dealerHand <= 21: 
                 numLosses += 1
-                print("Dealer wins!")
-                print(f"Your bankroll is now {bankroll}")
+                if (type(player) == Player.User or botMessages):
+                    print("Dealer wins!")
+                    print(f"Your bankroll is now {bankroll}")
+            elif playerHand == dealerHand:
+                if playerBlackjack and not dealerBlackjack:
+                    numWins += 1
+                    bankroll += floor(currentBet * 2.5)
+                    if (type(player) == Player.User or botMessages):
+                        print("You have blakcjack, you win!")
+                        print(f"Your bankroll is now {bankroll}")
+                elif dealerBlackjack:
+                    numLosses += 1
+                    if (type(player) == Player.User or botMessages):
+                        print("Dealer has blackjack, you lose!")
+                        print(f"Your bankroll is now {bankroll}")
+                numTies += 1
+                bankroll += currentBet
+                if (type(player) == Player.User or botMessages):
+                    print("It's a tie!")
+                    print(f"Your bankroll is now {bankroll}")
 
         # Update Player Bankroll for bot logic
         player.setPlayerHand(playerHand)
@@ -163,6 +243,8 @@ class main():
         player.setNumWins(numWins)
         player.setNumLosses(numLosses)
         player.setNumTies(numTies)
+        player.setDealerAces(0)
+        player.setPlayerAces(0)
         
         continuePlaying = player.playAgainResponse() # Player Input: Play Again
 
